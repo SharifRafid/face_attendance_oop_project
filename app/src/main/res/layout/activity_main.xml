@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="24dp"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Face Recognition"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="48dp" />
+
+    <Button
+        android:id="@+id/btnDetectFace"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="Detect Face"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnRecognizeFace"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="Recognize Face" />
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stored faces: 0"
+        android:layout_marginTop="32dp"
+        android:textSize="16sp" />
+
+</LinearLayout>
