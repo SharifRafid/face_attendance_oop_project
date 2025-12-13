@@ -6,10 +6,10 @@ package com.example.myapplication;
 public class FaceData {
     public String name;
     public float[] features;
+    public long studentId; // Optional: for linking to Student model
 
     public FaceData(String name, float[] features) {
         this.name = name;
         this.features = features;
     }
 }
-

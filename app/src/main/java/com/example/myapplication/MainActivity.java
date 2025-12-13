@@ -1,13 +1,17 @@
 package com.example.myapplication;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,271 +19,236 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.lifecycle.LifecycleOwner;
 
-import com.google.common.util.concurrent.ListenableFuture;
+import com.example.myapplication.models.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
+/**
+ * Main Activity for the Attendance Management System.
+ * Handles teacher setup, class/student management, and navigation.
+ */
 public class MainActivity extends AppCompatActivity {
 
-    // Stored face data list
-    private final List<FaceData> storedFaces = new ArrayList<>();
-    
-    // Face helper for all detection logic
-    private FaceHelper faceHelper;
-    
-    // Database for storing faces locally
-    private FaceDatabase faceDatabase;
-    
-    private TextView tvStatus;
-    private ExecutorService cameraExecutor;
+    private AttendanceDatabase database;
+    private CameraDialogHelper cameraHelper;
+
+    private LinearLayout layoutTeacherSetup, layoutDashboard;
+    private EditText etTeacherName, etTeacherInitial, etTeacherPin;
+    private TextView tvTeacherInfo, tvStatus;
+
+    private Teacher currentTeacher;
+    private List<SchoolClass> classes = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+        setupEdgeToEdge();
+
+        database = new AttendanceDatabase(this);
+        cameraHelper = new CameraDialogHelper(this);
+
+        initViews();
+        checkTeacherSetup();
+    }
+
+    private void setupEdgeToEdge() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
 
-        faceHelper = new FaceHelper();
-        cameraExecutor = Executors.newSingleThreadExecutor();
-        
-        // Initialize database and load stored faces
-        faceDatabase = new FaceDatabase(this);
-        storedFaces.addAll(faceDatabase.getAllFaces());
-        
+    private void initViews() {
+        layoutTeacherSetup = findViewById(R.id.layoutTeacherSetup);
+        layoutDashboard = findViewById(R.id.layoutDashboard);
+
+        // Teacher setup views
+        etTeacherName = findViewById(R.id.etTeacherName);
+        etTeacherInitial = findViewById(R.id.etTeacherInitial);
+        etTeacherPin = findViewById(R.id.etTeacherPin);
+        findViewById(R.id.btnSaveTeacher).setOnClickListener(v -> saveTeacher());
+
+        // Dashboard views
+        tvTeacherInfo = findViewById(R.id.tvTeacherInfo);
         tvStatus = findViewById(R.id.tvStatus);
-        tvStatus.setText("Stored faces: " + storedFaces.size());
-        
-        findViewById(R.id.btnDetectFace).setOnClickListener(v -> {
-            if (checkCameraPermission()) showCaptureDialog();
-        });
-        
-        findViewById(R.id.btnRecognizeFace).setOnClickListener(v -> {
-            if (checkCameraPermission()) showRecognizeDialog();
+
+        findViewById(R.id.btnAddClass).setOnClickListener(v -> showAddClassDialog());
+        findViewById(R.id.btnAddStudent).setOnClickListener(v -> showAddStudentDialog());
+        findViewById(R.id.btnGiveAttendance).setOnClickListener(v -> 
+                startActivity(new Intent(this, GiveAttendanceActivity.class)));
+        findViewById(R.id.btnViewAttendance).setOnClickListener(v -> 
+                startActivity(new Intent(this, ViewAttendanceActivity.class)));
+    }
+
+    private void checkTeacherSetup() {
+        currentTeacher = database.getTeacher();
+        if (currentTeacher == null) {
+            showTeacherSetup();
+        } else {
+            showDashboard();
+        }
+    }
+
+    private void showTeacherSetup() {
+        layoutTeacherSetup.setVisibility(View.VISIBLE);
+        layoutDashboard.setVisibility(View.GONE);
+    }
+
+    private void showDashboard() {
+        layoutTeacherSetup.setVisibility(View.GONE);
+        layoutDashboard.setVisibility(View.VISIBLE);
+        tvTeacherInfo.setText("Welcome, " + currentTeacher.getName() + " (" + currentTeacher.getInitial() + ")");
+        updateStatus();
+    }
+
+    private void saveTeacher() {
+        String name = etTeacherName.getText().toString().trim();
+        String initial = etTeacherInitial.getText().toString().trim().toUpperCase();
+        String pin = etTeacherPin.getText().toString().trim();
+
+        if (name.isEmpty() || initial.isEmpty() || pin.length() != 4) {
+            showToast("Please fill all fields correctly");
+            return;
+        }
+
+        currentTeacher = new Teacher(name, initial, pin);
+        database.insertTeacher(currentTeacher);
+        showDashboard();
+    }
+
+    private void showAddClassDialog() {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_class, null);
+        EditText etClassName = dialogView.findViewById(R.id.etClassName);
+        EditText etSection = dialogView.findViewById(R.id.etSection);
+        RadioGroup rgClassType = dialogView.findViewById(R.id.rgClassType);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Add Class")
+                .setView(dialogView)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String name = etClassName.getText().toString().trim();
+                    String section = etSection.getText().toString().trim();
+                    boolean isLab = rgClassType.getCheckedRadioButtonId() == R.id.rbLab;
+
+                    if (name.isEmpty() || section.isEmpty()) {
+                        showToast("Fill all fields");
+                        return;
+                    }
+
+                    SchoolClass schoolClass = isLab 
+                            ? new LabClass(name, section, currentTeacher.getId())
+                            : new TheoryClass(name, section, currentTeacher.getId());
+                    database.insertClass(schoolClass);
+                    updateStatus();
+                    showToast("Class added!");
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showAddStudentDialog() {
+        classes = database.getAllClasses();
+        if (classes.isEmpty()) {
+            showToast("Add a class first");
+            return;
+        }
+
+        if (!hasCameraPermission()) return;
+
+        // Show class selection first
+        View selectView = LayoutInflater.from(this).inflate(R.layout.dialog_select_class, null);
+        Spinner spinnerClass = selectView.findViewById(R.id.spinnerClass);
+
+        List<String> classNames = new ArrayList<>();
+        for (SchoolClass c : classes) {
+            classNames.add(c.toString());
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, classNames);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerClass.setAdapter(adapter);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Select Class")
+                .setView(selectView)
+                .setPositiveButton("Next", (dialog, which) -> {
+                    int selectedIndex = spinnerClass.getSelectedItemPosition();
+                    if (selectedIndex >= 0) {
+                        showCaptureStudentDialog(classes.get(selectedIndex));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showCaptureStudentDialog(SchoolClass selectedClass) {
+        cameraHelper.showCaptureDialog(new CameraDialogHelper.CaptureCallback() {
+            @Override
+            public void onFaceCaptured(String name, String studentId, String section, float[] features) {
+                Student student = new Student(name, studentId, section, selectedClass.getId(), features);
+                database.insertStudent(student);
+                updateStatus();
+                showToast("Student added: " + name);
+            }
+
+            @Override
+            public void onError(String message) {
+                showToast(message);
+            }
         });
     }
 
-    private boolean checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
+    private void updateStatus() {
+        classes = database.getAllClasses();
+        List<Student> students = database.getAllStudents();
+        tvStatus.setText("Classes: " + classes.size() + " | Students: " + students.size());
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean hasCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, 
-                    new String[]{Manifest.permission.CAMERA}, 100);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 100);
             return false;
         }
         return true;
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, 
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 100 && grantResults.length > 0 
+        if (requestCode == 100 && grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this, "Permission granted. Try again.", Toast.LENGTH_SHORT).show();
+            showToast("Permission granted. Try again.");
         }
     }
 
-    // ==================== CAPTURE FACE DIALOG ====================
-    
-    private void showCaptureDialog() {
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_capture_face, null);
-        PreviewView previewView = dialogView.findViewById(R.id.previewView);
-        EditText etName = dialogView.findViewById(R.id.etName);
-        Button btnCapture = dialogView.findViewById(R.id.btnCapture);
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Add Face")
-                .setView(dialogView)
-                .setNegativeButton("Cancel", null)
-                .create();
-
-        dialog.setOnShowListener(d -> {
-            ListenableFuture<ProcessCameraProvider> future = ProcessCameraProvider.getInstance(this);
-            future.addListener(() -> {
-                try {
-                    ProcessCameraProvider provider = future.get();
-                    Preview preview = new Preview.Builder().build();
-                    preview.setSurfaceProvider(previewView.getSurfaceProvider());
-                    
-                    provider.unbindAll();
-                    provider.bindToLifecycle((LifecycleOwner) this, 
-                            CameraSelector.DEFAULT_FRONT_CAMERA, preview);
-                } catch (Exception e) {
-                    Toast.makeText(this, "Camera error", Toast.LENGTH_SHORT).show();
-                }
-            }, ContextCompat.getMainExecutor(this));
-        });
-
-        btnCapture.setOnClickListener(v -> {
-            String name = etName.getText().toString().trim();
-            if (name.isEmpty()) {
-                Toast.makeText(this, "Enter a name", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Get bitmap on main thread before processing
-            Bitmap bitmap = previewView.getBitmap();
-            if (bitmap == null) {
-                Toast.makeText(this, "Could not capture image", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            faceHelper.detectFace(bitmap, new FaceHelper.FaceDetectionCallback() {
-                @Override
-                public void onFaceDetected(float[] features) {
-                    FaceData faceData = new FaceData(name, features);
-                    storedFaces.add(faceData);
-                    faceDatabase.insertFace(faceData);
-                    runOnUiThread(() -> {
-                        tvStatus.setText("Stored faces: " + storedFaces.size());
-                        Toast.makeText(MainActivity.this, 
-                                "Face saved: " + name, Toast.LENGTH_SHORT).show();
-                        dialog.dismiss();
-                    });
-                }
-
-                @Override
-                public void onNoFaceDetected() {
-                    runOnUiThread(() -> Toast.makeText(MainActivity.this, 
-                            "No face detected", Toast.LENGTH_SHORT).show());
-                }
-
-                @Override
-                public void onError(String message) {
-                    runOnUiThread(() -> Toast.makeText(MainActivity.this, 
-                            "Error: " + message, Toast.LENGTH_SHORT).show());
-                }
-            });
-        });
-
-        dialog.setOnDismissListener(d -> {
-            try {
-                ProcessCameraProvider.getInstance(this).get().unbindAll();
-            } catch (Exception ignored) {}
-        });
-
-        dialog.show();
-    }
-
-    // ==================== RECOGNIZE FACE DIALOG ====================
-    
-    private void showRecognizeDialog() {
-        if (storedFaces.isEmpty()) {
-            Toast.makeText(this, "No faces stored yet", Toast.LENGTH_SHORT).show();
-            return;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (currentTeacher != null) {
+            updateStatus();
         }
-
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_recognize_face, null);
-        PreviewView previewView = dialogView.findViewById(R.id.previewView);
-        TextView tvResult = dialogView.findViewById(R.id.tvResult);
-        Button btnClose = dialogView.findViewById(R.id.btnClose);
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Recognize Face")
-                .setView(dialogView)
-                .create();
-
-        final boolean[] isProcessing = {false};
-
-        dialog.setOnShowListener(d -> {
-            ListenableFuture<ProcessCameraProvider> future = ProcessCameraProvider.getInstance(this);
-            future.addListener(() -> {
-                try {
-                    ProcessCameraProvider provider = future.get();
-                    Preview preview = new Preview.Builder().build();
-                    preview.setSurfaceProvider(previewView.getSurfaceProvider());
-                    
-                    ImageAnalysis analysis = new ImageAnalysis.Builder()
-                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                            .build();
-                    
-                    analysis.setAnalyzer(cameraExecutor, image -> {
-                        if (isProcessing[0]) {
-                            image.close();
-                            return;
-                        }
-                        isProcessing[0] = true;
-                        image.close();
-                        
-                        // Get bitmap on main thread
-                        runOnUiThread(() -> {
-                            Bitmap bitmap = previewView.getBitmap();
-                            if (bitmap != null) {
-                                faceHelper.recognizeFace(bitmap, storedFaces, 
-                                        new FaceHelper.FaceRecognitionCallback() {
-                                    @Override
-                                    public void onFaceRecognized(String name, float confidence) {
-                                        runOnUiThread(() -> tvResult.setText("Recognized: " + name));
-                                        isProcessing[0] = false;
-                                    }
-
-                                    @Override
-                                    public void onFaceNotRecognized() {
-                                        runOnUiThread(() -> tvResult.setText("Unknown face"));
-                                        isProcessing[0] = false;
-                                    }
-
-                                    @Override
-                                    public void onNoFaceDetected() {
-                                        runOnUiThread(() -> tvResult.setText("No face detected"));
-                                        isProcessing[0] = false;
-                                    }
-
-                                    @Override
-                                    public void onError(String message) {
-                                        isProcessing[0] = false;
-                                    }
-                                });
-                            } else {
-                                isProcessing[0] = false;
-                            }
-                        });
-                    });
-                    
-                    provider.unbindAll();
-                    provider.bindToLifecycle((LifecycleOwner) this, 
-                            CameraSelector.DEFAULT_FRONT_CAMERA, preview, analysis);
-                } catch (Exception e) {
-                    Toast.makeText(this, "Camera error", Toast.LENGTH_SHORT).show();
-                }
-            }, ContextCompat.getMainExecutor(this));
-        });
-
-        btnClose.setOnClickListener(v -> dialog.dismiss());
-
-        dialog.setOnDismissListener(d -> {
-            try {
-                ProcessCameraProvider.getInstance(this).get().unbindAll();
-            } catch (Exception ignored) {}
-        });
-
-        dialog.show();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        faceHelper.close();
-        cameraExecutor.shutdown();
-        faceDatabase.close();
+        cameraHelper.close();
+        database.close();
     }
 }

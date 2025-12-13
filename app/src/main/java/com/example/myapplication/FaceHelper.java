@@ -25,19 +25,24 @@ public class FaceHelper {
 
     public interface FaceDetectionCallback {
         void onFaceDetected(float[] features);
+
         void onNoFaceDetected();
+
         void onError(String message);
     }
 
     public interface FaceRecognitionCallback {
         void onFaceRecognized(String name, float confidence);
+
         void onFaceNotRecognized();
+
         void onNoFaceDetected();
+
         void onError(String message);
     }
 
     private final FaceDetector detector;
-    private static final float RECOGNITION_THRESHOLD = 0.6f;
+    private static final float RECOGNITION_THRESHOLD = 0.8f;
 
     public FaceHelper() {
         FaceDetectorOptions options = new FaceDetectorOptions.Builder()
@@ -178,8 +183,10 @@ public class FaceHelper {
         // Get bounding box dimensions for normalization
         float faceWidth = face.getBoundingBox().width();
         float faceHeight = face.getBoundingBox().height();
-        if (faceWidth == 0) faceWidth = 1;
-        if (faceHeight == 0) faceHeight = 1;
+        if (faceWidth == 0)
+            faceWidth = 1;
+        if (faceHeight == 0)
+            faceHeight = 1;
 
         // Extract landmark positions (normalized)
         int[] landmarkTypes = {
@@ -205,8 +212,8 @@ public class FaceHelper {
         }
 
         // Add face angles as features
-        features[index++] = face.getHeadEulerAngleX() / 45f;  // Normalized pitch
-        features[index++] = face.getHeadEulerAngleY() / 45f;  // Normalized yaw
+        features[index++] = face.getHeadEulerAngleX() / 45f; // Normalized pitch
+        features[index++] = face.getHeadEulerAngleY() / 45f; // Normalized yaw
 
         // Add some contour-based features for better accuracy
         FaceContour faceOval = face.getContour(FaceContour.FACE);
@@ -229,7 +236,8 @@ public class FaceHelper {
      * Calculates cosine similarity between two feature vectors.
      */
     private float calculateSimilarity(float[] features1, float[] features2) {
-        if (features1.length != features2.length) return 0;
+        if (features1.length != features2.length)
+            return 0;
 
         float dotProduct = 0;
         float norm1 = 0;
@@ -241,7 +249,8 @@ public class FaceHelper {
             norm2 += features2[i] * features2[i];
         }
 
-        if (norm1 == 0 || norm2 == 0) return 0;
+        if (norm1 == 0 || norm2 == 0)
+            return 0;
         return (dotProduct / (float) (Math.sqrt(norm1) * Math.sqrt(norm2)) + 1) / 2;
     }
 
@@ -249,4 +258,3 @@ public class FaceHelper {
         detector.close();
     }
 }
-

@@ -9,33 +9,137 @@
     android:padding="24dp"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- Teacher Setup Section (shown initially) -->
+    <LinearLayout
+        android:id="@+id/layoutTeacherSetup"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Face Recognition"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="48dp" />
+        android:orientation="vertical"
+        android:visibility="gone">
 
-    <Button
-        android:id="@+id/btnDetectFace"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:text="Detect Face"
-        android:layout_marginBottom="16dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Teacher Setup"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="32dp"
+            android:layout_gravity="center" />
 
-    <Button
-        android:id="@+id/btnRecognizeFace"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:text="Recognize Face" />
+        <EditText
+            android:id="@+id/etTeacherName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Teacher Name"
+            android:inputType="textPersonName"
+            android:layout_marginBottom="12dp" />
 
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="wrap_content"
+        <EditText
+            android:id="@+id/etTeacherInitial"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Teacher Initial (e.g. ABC)"
+            android:inputType="textCapCharacters"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/etTeacherPin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="PIN (4 digits)"
+            android:inputType="numberPassword"
+            android:maxLength="4"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/btnSaveTeacher"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save &amp; Continue" />
+
+    </LinearLayout>
+
+    <!-- Main Dashboard (shown after teacher setup) -->
+    <LinearLayout
+        android:id="@+id/layoutDashboard"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Stored faces: 0"
-        android:layout_marginTop="32dp"
-        android:textSize="16sp" />
+        android:orientation="vertical"
+        android:visibility="visible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DIU Smart Attendance System"
+            android:textSize="24sp"
+            android:textColor="#673AB7"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:id="@+id/tvTeacherInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="32dp"
+            android:layout_gravity="center" />
+
+        <Button
+            android:id="@+id/btnAddClass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Class"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnAddStudent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Student"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnGiveAttendance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Give Attendance"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnViewAttendance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View Attendance" />
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Classes: 0 | Students: 0"
+            android:layout_marginTop="32dp"
+            android:textSize="14sp"
+            android:textColor="#888888"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="A Project By:\nSukonya Sampurna Halder (242-15-796)\nNusrat Jahan
+Muna
+(242-15-317)\nFozle Elahe
+Bappi
+(242-15-752)\nSadik Al
+Naeem
+(242-15-561)\nSharif Rafid Ur Rahman (242-15-480)"
+            android:layout_marginTop="32dp"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="#673AB7"
+            android:layout_gravity="center" />
+
+    </LinearLayout>
 
 </LinearLayout>
