@@ -116,48 +116,48 @@ public class AttendanceDatabase extends SQLiteOpenHelper {
 
     // ==================== CLASS OPERATIONS ====================
 
-    public long insertClass(SchoolClass schoolClass) {
+    public long insertClass(BaseClass baseClass) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("name", schoolClass.getName());
-        values.put("section", schoolClass.getSection());
-        values.put("class_type", schoolClass.getClassType());
-        values.put("teacher_id", schoolClass.getTeacherId());
+        values.put("name", baseClass.getName());
+        values.put("section", baseClass.getSection());
+        values.put("class_type", baseClass.getClassType());
+        values.put("teacher_id", baseClass.getTeacherId());
         return db.insert(TABLE_CLASSES, null, values);
     }
 
-    public List<SchoolClass> getAllClasses() {
-        List<SchoolClass> classes = new ArrayList<>();
+    public List<BaseClass> getAllClasses() {
+        List<BaseClass> classes = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_CLASSES, null, null, null, null, null, null);
 
         while (cursor.moveToNext()) {
             String type = cursor.getString(cursor.getColumnIndexOrThrow("class_type"));
-            SchoolClass schoolClass = "Lab".equals(type) ? new LabClass() : new TheoryClass();
-            schoolClass.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));
-            schoolClass.setName(cursor.getString(cursor.getColumnIndexOrThrow("name")));
-            schoolClass.setSection(cursor.getString(cursor.getColumnIndexOrThrow("section")));
-            schoolClass.setTeacherId(cursor.getLong(cursor.getColumnIndexOrThrow("teacher_id")));
-            classes.add(schoolClass);
+            BaseClass baseClass = "Lab".equals(type) ? new LabClass() : new TheoryClass();
+            baseClass.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));
+            baseClass.setName(cursor.getString(cursor.getColumnIndexOrThrow("name")));
+            baseClass.setSection(cursor.getString(cursor.getColumnIndexOrThrow("section")));
+            baseClass.setTeacherId(cursor.getLong(cursor.getColumnIndexOrThrow("teacher_id")));
+            classes.add(baseClass);
         }
         cursor.close();
         return classes;
     }
 
-    public SchoolClass getClassById(long id) {
+    public BaseClass getClassById(long id) {
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_CLASSES, null, "id=?", new String[] { String.valueOf(id) }, null, null, null);
-        SchoolClass schoolClass = null;
+        BaseClass baseClass = null;
         if (cursor.moveToFirst()) {
             String type = cursor.getString(cursor.getColumnIndexOrThrow("class_type"));
-            schoolClass = "Lab".equals(type) ? new LabClass() : new TheoryClass();
-            schoolClass.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));
-            schoolClass.setName(cursor.getString(cursor.getColumnIndexOrThrow("name")));
-            schoolClass.setSection(cursor.getString(cursor.getColumnIndexOrThrow("section")));
-            schoolClass.setTeacherId(cursor.getLong(cursor.getColumnIndexOrThrow("teacher_id")));
+            baseClass = "Lab".equals(type) ? new LabClass() : new TheoryClass();
+            baseClass.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));
+            baseClass.setName(cursor.getString(cursor.getColumnIndexOrThrow("name")));
+            baseClass.setSection(cursor.getString(cursor.getColumnIndexOrThrow("section")));
+            baseClass.setTeacherId(cursor.getLong(cursor.getColumnIndexOrThrow("teacher_id")));
         }
         cursor.close();
-        return schoolClass;
+        return baseClass;
     }
 
     // ==================== STUDENT OPERATIONS ====================
@@ -253,9 +253,9 @@ public class AttendanceDatabase extends SQLiteOpenHelper {
             attendance.setDate(cursor.getString(cursor.getColumnIndexOrThrow("date")));
 
             // Get class name
-            SchoolClass schoolClass = getClassById(classId);
-            if (schoolClass != null) {
-                attendance.setClassName(schoolClass.getName() + " - " + schoolClass.getSection());
+            BaseClass baseClass = getClassById(classId);
+            if (baseClass != null) {
+                attendance.setClassName(baseClass.getName() + " - " + baseClass.getSection());
             }
 
             // Get attendance records

@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
@@ -44,28 +43,18 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvTeacherInfo, tvStatus;
 
     private Teacher currentTeacher;
-    private List<SchoolClass> classes = new ArrayList<>();
+    private List<BaseClass> classes = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        setupEdgeToEdge();
 
         database = new AttendanceDatabase(this);
         cameraHelper = new CameraDialogHelper(this);
 
         initViews();
         checkTeacherSetup();
-    }
-
-    private void setupEdgeToEdge() {
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
     }
 
     private void initViews() {
@@ -145,10 +134,10 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     }
 
-                    SchoolClass schoolClass = isLab 
+                    BaseClass baseClass = isLab
                             ? new LabClass(name, section, currentTeacher.getId())
                             : new TheoryClass(name, section, currentTeacher.getId());
-                    database.insertClass(schoolClass);
+                    database.insertClass(baseClass);
                     updateStatus();
                     showToast("Class added!");
                 })
@@ -170,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
         Spinner spinnerClass = selectView.findViewById(R.id.spinnerClass);
 
         List<String> classNames = new ArrayList<>();
-        for (SchoolClass c : classes) {
+        for (BaseClass c : classes) {
             classNames.add(c.toString());
         }
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
@@ -191,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void showCaptureStudentDialog(SchoolClass selectedClass) {
+    private void showCaptureStudentDialog(BaseClass selectedClass) {
         cameraHelper.showCaptureDialog(new CameraDialogHelper.CaptureCallback() {
             @Override
             public void onFaceCaptured(String name, String studentId, String section, float[] features) {

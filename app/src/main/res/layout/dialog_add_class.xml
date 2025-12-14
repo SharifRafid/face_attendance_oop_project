@@ -3,53 +3,100 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@android:color/white"
+    android:padding="24dp">
 
-    <EditText
-        android:id="@+id/etClassName"
-        android:layout_width="match_parent"
+    <!-- Dialog Header -->
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Class Name (e.g. CSE101)"
-        android:inputType="text"
-        android:layout_marginBottom="12dp" />
-
-    <EditText
-        android:id="@+id/etSection"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Section (e.g. A, B, C)"
-        android:inputType="text"
-        android:layout_marginBottom="12dp" />
+        android:text="📚 Add New Class"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#673AB7"
+        android:layout_marginBottom="8dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Class Type:"
+        android:text="Fill in the class details below"
         android:textSize="14sp"
-        android:layout_marginBottom="8dp" />
+        android:textColor="#757575"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Class Name Input -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Class Name (e.g. CSE101)">
+
+        <EditText
+            android:id="@+id/etClassName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:padding="16dp"
+            android:textSize="16sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Section Input -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:hint="Section (e.g. A, B, C)">
+
+        <EditText
+            android:id="@+id/etSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:padding="16dp"
+            android:textSize="16sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Class Type Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📖 Class Type"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#212121"
+        android:layout_marginBottom="12dp" />
 
     <RadioGroup
         android:id="@+id/rgClassType"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:background="#F5F5F5"
+        android:padding="12dp">
 
         <RadioButton
             android:id="@+id/rbTheory"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Theory"
-            android:checked="true" />
+            android:text="📝 Theory"
+            android:textSize="15sp"
+            android:textColor="#212121"
+            android:checked="true"
+            android:buttonTint="#673AB7" />
 
         <RadioButton
             android:id="@+id/rbLab"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Lab" />
+            android:text="🔬 Lab"
+            android:textSize="15sp"
+            android:textColor="#212121"
+            android:buttonTint="#673AB7" />
 
     </RadioGroup>
 
 </LinearLayout>
+
 

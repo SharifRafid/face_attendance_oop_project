@@ -4,7 +4,7 @@ package com.example.myapplication.models;
  * TheoryClass extends SchoolClass.
  * Demonstrates inheritance - inherits common properties from SchoolClass.
  */
-public class TheoryClass extends SchoolClass {
+public class TheoryClass extends BaseClass {
 
     public TheoryClass() {
         super();

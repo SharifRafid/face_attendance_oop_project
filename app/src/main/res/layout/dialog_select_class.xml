@@ -3,19 +3,44 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@android:color/white"
+    android:padding="24dp">
+
+    <!-- Dialog Header -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📚 Select Class"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#673AB7"
+        android:layout_marginBottom="8dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Select a class for the student:"
+        android:text="Choose a class for the student"
         android:textSize="14sp"
+        android:textColor="#757575"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Class Selection -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Available Classes:"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#212121"
         android:layout_marginBottom="12dp" />
 
     <Spinner
         android:id="@+id/spinnerClass"
         android:layout_width="match_parent"
-        android:layout_height="48dp" />
+        android:layout_height="56dp"
+        android:background="@android:drawable/edit_text"
+        android:padding="12dp" />
 
 </LinearLayout>
+
 

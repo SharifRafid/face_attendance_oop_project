@@ -37,7 +37,7 @@ public class GiveAttendanceActivity extends AppCompatActivity {
     private Button btnStartCamera, btnSave;
     private View layoutCamera;
 
-    private List<SchoolClass> classes = new ArrayList<>();
+    private List<BaseClass> classes = new ArrayList<>();
     private List<Student> students = new ArrayList<>();
     private Set<Long> presentStudents = new HashSet<>();
     private String selectedDate;
@@ -85,7 +85,7 @@ public class GiveAttendanceActivity extends AppCompatActivity {
     private void loadClasses() {
         classes = database.getAllClasses();
         List<String> classNames = new ArrayList<>();
-        for (SchoolClass c : classes) {
+        for (BaseClass c : classes) {
             classNames.add(c.toString());
         }
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
@@ -97,7 +97,7 @@ public class GiveAttendanceActivity extends AppCompatActivity {
     private void loadStudentsForClass() {
         if (classes.isEmpty() || spinnerClass.getSelectedItemPosition() < 0)
             return;
-        SchoolClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
+        BaseClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
         students = database.getStudentsByClass(selectedClass.getId());
         presentStudents.clear();
         updateStatus();
@@ -153,7 +153,7 @@ public class GiveAttendanceActivity extends AppCompatActivity {
             return;
         }
 
-        SchoolClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
+        BaseClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
 
         // Check if attendance already exists
         if (database.getAttendance(selectedClass.getId(), selectedDate) != null) {

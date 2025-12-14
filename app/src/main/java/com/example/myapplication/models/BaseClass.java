@@ -4,15 +4,15 @@ package com.example.myapplication.models;
  * Abstract base class for School Classes.
  * Demonstrates abstraction - defines common behavior for all class types.
  */
-public abstract class SchoolClass {
+public abstract class BaseClass {
     protected long id;
     protected String name;
     protected String section;
     protected long teacherId;
 
-    public SchoolClass() {}
+    public BaseClass() {}
 
-    public SchoolClass(String name, String section, long teacherId) {
+    public BaseClass(String name, String section, long teacherId) {
         this.name = name;
         this.section = section;
         this.teacherId = teacherId;

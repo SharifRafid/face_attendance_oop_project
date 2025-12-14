@@ -29,7 +29,7 @@ public class ViewAttendanceActivity extends AppCompatActivity {
     private TextView tvSummary;
     private Button btnDelete;
 
-    private List<SchoolClass> classes = new ArrayList<>();
+    private List<BaseClass> classes = new ArrayList<>();
     private List<String> dates = new ArrayList<>();
 
     @Override
@@ -69,7 +69,7 @@ public class ViewAttendanceActivity extends AppCompatActivity {
     private void loadClasses() {
         classes = database.getAllClasses();
         List<String> classNames = new ArrayList<>();
-        for (SchoolClass c : classes) {
+        for (BaseClass c : classes) {
             classNames.add(c.toString());
         }
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
@@ -81,7 +81,7 @@ public class ViewAttendanceActivity extends AppCompatActivity {
     private void loadDates() {
         if (classes.isEmpty() || spinnerClass.getSelectedItemPosition() < 0)
             return;
-        SchoolClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
+        BaseClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
         dates = database.getAttendanceDates(selectedClass.getId());
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
@@ -99,7 +99,7 @@ public class ViewAttendanceActivity extends AppCompatActivity {
             return;
         }
 
-        SchoolClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
+        BaseClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
         String selectedDate = dates.get(spinnerDate.getSelectedItemPosition());
 
         Attendance attendance = database.getAttendance(selectedClass.getId(), selectedDate);
@@ -128,7 +128,7 @@ public class ViewAttendanceActivity extends AppCompatActivity {
         if (classes.isEmpty() || dates.isEmpty())
             return;
 
-        SchoolClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
+        BaseClass selectedClass = classes.get(spinnerClass.getSelectedItemPosition());
         String selectedDate = dates.get(spinnerDate.getSelectedItemPosition());
 
         Attendance attendance = database.getAttendance(selectedClass.getId(), selectedDate);

@@ -17,7 +17,7 @@ import java.util.List;
 public class FaceDatabase extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "faces.db";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     private static final String TABLE_FACES = "faces";
     private static final String COLUMN_ID = "id";
@@ -110,4 +110,3 @@ public class FaceDatabase extends SQLiteOpenHelper {
         return floats;
     }
 }
-

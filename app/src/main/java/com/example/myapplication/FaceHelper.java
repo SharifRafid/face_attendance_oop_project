@@ -42,7 +42,8 @@ public class FaceHelper {
     }
 
     private final FaceDetector detector;
-    private static final float RECOGNITION_THRESHOLD = 0.8f;
+    private static final float RECOGNITION_THRESHOLD = 0.6f; // Lower threshold for Euclidean distance (smaller is
+                                                             // better, but we invert logic)
 
     public FaceHelper() {
         FaceDetectorOptions options = new FaceDetectorOptions.Builder()
@@ -64,7 +65,11 @@ public class FaceHelper {
                         callback.onNoFaceDetected();
                     } else {
                         float[] features = extractFeatures(faces.get(0));
-                        callback.onFaceDetected(features);
+                        if (features != null) {
+                            callback.onFaceDetected(features);
+                        } else {
+                            callback.onError("Face detected but landmarks missing");
+                        }
                     }
                 })
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
@@ -88,7 +93,11 @@ public class FaceHelper {
                         callback.onNoFaceDetected();
                     } else {
                         float[] features = extractFeatures(faces.get(0));
-                        callback.onFaceDetected(features);
+                        if (features != null) {
+                            callback.onFaceDetected(features);
+                        } else {
+                            callback.onError("Face detected but landmarks missing");
+                        }
                     }
                     imageProxy.close();
                 })
@@ -138,7 +147,11 @@ public class FaceHelper {
                         callback.onNoFaceDetected();
                     } else {
                         float[] features = extractFeatures(faces.get(0));
-                        matchFace(features, storedFaces, callback);
+                        if (features != null) {
+                            matchFace(features, storedFaces, callback);
+                        } else {
+                            callback.onFaceNotRecognized();
+                        }
                     }
                     imageProxy.close();
                 })
@@ -155,103 +168,100 @@ public class FaceHelper {
         }
 
         String bestMatch = null;
-        float bestSimilarity = 0;
+        float bestScore = Float.MAX_VALUE; // Lower is better for Euclidean distance
 
         for (FaceData stored : storedFaces) {
-            float similarity = calculateSimilarity(features, stored.features);
-            if (similarity > bestSimilarity) {
-                bestSimilarity = similarity;
+            float score = calculateEuclideanDistance(features, stored.features);
+            if (score < bestScore) {
+                bestScore = score;
                 bestMatch = stored.name;
             }
         }
 
-        if (bestSimilarity >= RECOGNITION_THRESHOLD && bestMatch != null) {
-            callback.onFaceRecognized(bestMatch, bestSimilarity);
+        // Threshold check: if distance is small enough, it's a match
+        // We use RECOGNITION_THRESHOLD as the max allowed distance
+        if (bestScore <= RECOGNITION_THRESHOLD && bestMatch != null) {
+            // Convert distance to a confidence score (0 to 1) for display
+            // Simple inversion: 1.0 - (distance / max_expected_distance)
+            float confidence = Math.max(0f, 1.0f - (bestScore / 2.0f));
+            callback.onFaceRecognized(bestMatch, confidence);
         } else {
             callback.onFaceNotRecognized();
         }
     }
 
     /**
-     * Extracts a feature vector from face landmarks and contours.
-     * Uses normalized distances between facial landmarks as features.
+     * Extracts a feature vector using geometric ratios between landmarks.
+     * This is more robust to scale and position than raw coordinates.
      */
     private float[] extractFeatures(Face face) {
-        float[] features = new float[50];
-        int index = 0;
+        // We need specific landmarks to calculate ratios
+        FaceLandmark leftEye = face.getLandmark(FaceLandmark.LEFT_EYE);
+        FaceLandmark rightEye = face.getLandmark(FaceLandmark.RIGHT_EYE);
+        FaceLandmark nose = face.getLandmark(FaceLandmark.NOSE_BASE);
+        FaceLandmark mouthLeft = face.getLandmark(FaceLandmark.MOUTH_LEFT);
+        FaceLandmark mouthRight = face.getLandmark(FaceLandmark.MOUTH_RIGHT);
+        FaceLandmark mouthBottom = face.getLandmark(FaceLandmark.MOUTH_BOTTOM);
 
-        // Get bounding box dimensions for normalization
-        float faceWidth = face.getBoundingBox().width();
-        float faceHeight = face.getBoundingBox().height();
-        if (faceWidth == 0)
-            faceWidth = 1;
-        if (faceHeight == 0)
-            faceHeight = 1;
-
-        // Extract landmark positions (normalized)
-        int[] landmarkTypes = {
-                FaceLandmark.LEFT_EYE, FaceLandmark.RIGHT_EYE,
-                FaceLandmark.NOSE_BASE, FaceLandmark.MOUTH_LEFT,
-                FaceLandmark.MOUTH_RIGHT, FaceLandmark.MOUTH_BOTTOM,
-                FaceLandmark.LEFT_CHEEK, FaceLandmark.RIGHT_CHEEK,
-                FaceLandmark.LEFT_EAR, FaceLandmark.RIGHT_EAR
-        };
-
-        float centerX = face.getBoundingBox().centerX();
-        float centerY = face.getBoundingBox().centerY();
-
-        for (int type : landmarkTypes) {
-            FaceLandmark landmark = face.getLandmark(type);
-            if (landmark != null && index < 48) {
-                features[index++] = (landmark.getPosition().x - centerX) / faceWidth;
-                features[index++] = (landmark.getPosition().y - centerY) / faceHeight;
-            } else if (index < 48) {
-                features[index++] = 0;
-                features[index++] = 0;
-            }
+        // If any essential landmark is missing, we can't compute features
+        if (leftEye == null || rightEye == null || nose == null ||
+                mouthLeft == null || mouthRight == null || mouthBottom == null) {
+            return null;
         }
 
-        // Add face angles as features
-        features[index++] = face.getHeadEulerAngleX() / 45f; // Normalized pitch
-        features[index++] = face.getHeadEulerAngleY() / 45f; // Normalized yaw
+        PointF pLeftEye = leftEye.getPosition();
+        PointF pRightEye = rightEye.getPosition();
+        PointF pNose = nose.getPosition();
+        PointF pMouthLeft = mouthLeft.getPosition();
+        PointF pMouthRight = mouthRight.getPosition();
+        PointF pMouthBottom = mouthBottom.getPosition();
 
-        // Add some contour-based features for better accuracy
-        FaceContour faceOval = face.getContour(FaceContour.FACE);
-        if (faceOval != null) {
-            List<PointF> points = faceOval.getPoints();
-            if (points.size() >= 10) {
-                // Sample a few points from the face contour
-                for (int i = 0; i < 10 && index < 50; i++) {
-                    int sampleIndex = i * points.size() / 10;
-                    PointF point = points.get(sampleIndex);
-                    features[index++] = (point.x - centerX) / faceWidth;
-                }
-            }
-        }
+        // 1. Calculate Inter-Ocular Distance (IOD) as the reference scale
+        float iod = distance(pLeftEye, pRightEye);
+        if (iod == 0)
+            return null; // Avoid division by zero
+
+        // 2. Calculate other distances
+        float eyeToNose = distance(midPoint(pLeftEye, pRightEye), pNose);
+        float eyeToMouth = distance(midPoint(pLeftEye, pRightEye), midPoint(pMouthLeft, pMouthRight));
+        float noseToMouth = distance(pNose, midPoint(pMouthLeft, pMouthRight));
+        float mouthWidth = distance(pMouthLeft, pMouthRight);
+        float noseToMouthBottom = distance(pNose, pMouthBottom);
+
+        // 3. Create feature vector using ratios (Distance / IOD)
+        // This makes the features scale-invariant
+        float[] features = new float[5];
+        features[0] = eyeToNose / iod;
+        features[1] = eyeToMouth / iod;
+        features[2] = noseToMouth / iod;
+        features[3] = mouthWidth / iod;
+        features[4] = noseToMouthBottom / iod;
 
         return features;
     }
 
+    private float distance(PointF p1, PointF p2) {
+        return (float) Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    }
+
+    private PointF midPoint(PointF p1, PointF p2) {
+        return new PointF((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
+    }
+
     /**
-     * Calculates cosine similarity between two feature vectors.
+     * Calculates Euclidean distance between two feature vectors.
+     * Lower value means more similar.
      */
-    private float calculateSimilarity(float[] features1, float[] features2) {
-        if (features1.length != features2.length)
-            return 0;
+    private float calculateEuclideanDistance(float[] f1, float[] f2) {
+        if (f1 == null || f2 == null || f1.length != f2.length)
+            return Float.MAX_VALUE;
 
-        float dotProduct = 0;
-        float norm1 = 0;
-        float norm2 = 0;
-
-        for (int i = 0; i < features1.length; i++) {
-            dotProduct += features1[i] * features2[i];
-            norm1 += features1[i] * features1[i];
-            norm2 += features2[i] * features2[i];
+        float sum = 0;
+        for (int i = 0; i < f1.length; i++) {
+            float diff = f1[i] - f2[i];
+            sum += diff * diff;
         }
-
-        if (norm1 == 0 || norm2 == 0)
-            return 0;
-        return (dotProduct / (float) (Math.sqrt(norm1) * Math.sqrt(norm2)) + 1) / 2;
+        return (float) Math.sqrt(sum);
     }
 
     public void close() {
