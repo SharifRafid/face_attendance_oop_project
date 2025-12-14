@@ -42,7 +42,7 @@ public class FaceHelper {
     }
 
     private final FaceDetector detector;
-    private static final float RECOGNITION_THRESHOLD = 0.6f; // Lower threshold for Euclidean distance (smaller is
+    private static final float RECOGNITION_THRESHOLD = 0.4f; // Lower threshold for Euclidean distance (smaller is
                                                              // better, but we invert logic)
 
     public FaceHelper() {
@@ -228,14 +228,20 @@ public class FaceHelper {
         float mouthWidth = distance(pMouthLeft, pMouthRight);
         float noseToMouthBottom = distance(pNose, pMouthBottom);
 
+        // New features for stricter matching
+        float leftEyeToMouthLeft = distance(pLeftEye, pMouthLeft);
+        float rightEyeToMouthRight = distance(pRightEye, pMouthRight);
+
         // 3. Create feature vector using ratios (Distance / IOD)
         // This makes the features scale-invariant
-        float[] features = new float[5];
+        float[] features = new float[7];
         features[0] = eyeToNose / iod;
         features[1] = eyeToMouth / iod;
         features[2] = noseToMouth / iod;
         features[3] = mouthWidth / iod;
         features[4] = noseToMouthBottom / iod;
+        features[5] = leftEyeToMouthLeft / iod;
+        features[6] = rightEyeToMouthRight / iod;
 
         return features;
     }
